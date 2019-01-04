@@ -6,6 +6,7 @@ use twitter_stream::{Token as TwitterToken, TwitterStreamBuilder};
 use twitter_stream::rt::{Future, Stream};
 use serde_json;
 use std::fmt;
+use wordsworth::syllable_counter;
 
 fn main() {
 
@@ -28,8 +29,34 @@ fn main() {
         .filter_map(|json| {
             match serde_json::from_str::<Tweet>(&json) {
                 Ok(val) => Some(val),
-                Err(_) => None,
+                Err(_) => None, // May have seen a status deletion { delete: { status } }
             }
+        })
+        .filter(|tweet| {
+
+            let mut tot_syllables = 0;
+            let mut had_5 = false;
+            let mut had_12 = false;
+            let mut had_17 = false;
+
+            if !tweet.text.is_ascii() { // wordsworth breaks when there are multi-byte characters
+                return false;
+            }
+
+            for word in tweet.text.as_str().split_whitespace() {
+                tot_syllables += syllable_counter(&word);
+                if tot_syllables == 5 {
+                    had_5 = true;
+                }
+                if tot_syllables == 12 {
+                    had_12 = true;
+                }
+                if tot_syllables == 17 {
+                    had_17 = true;
+                }
+            }
+
+            had_5 && had_12 && had_17 && tot_syllables == 17
         })
         .for_each(|tweet| {
             debug(&tweet);
