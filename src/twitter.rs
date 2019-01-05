@@ -5,6 +5,7 @@ use twitter_stream::{TwitterStream, FutureTwitterStream, TwitterStreamBuilder};
 pub use twitter_stream::Token;
 
 type TwitterStreamItem = <TwitterStream as Stream>::Item;
+type TwitterStreamError = <TwitterStream as Stream>::Error;
 
 pub struct TweetStream {
     inner: FilterMap<FlattenStream<FutureTwitterStream>, fn(TwitterStreamItem) -> Option<Tweet>>
@@ -24,7 +25,7 @@ impl TweetStream {
 
 impl Stream for TweetStream {
     type Item = Tweet;
-    type Error = <TwitterStream as Stream>::Error;
+    type Error = TwitterStreamError;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         self.inner.poll()
