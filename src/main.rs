@@ -1,11 +1,9 @@
-
+mod twitter;
+use self::twitter::{Token, TweetStream};
 use dotenv::dotenv;
 use envy;
 use serde_derive::Deserialize;
-use twitter_stream::{Token as TwitterToken, TwitterStreamBuilder};
-use twitter_stream::rt::{Future, Stream};
-use serde_json;
-use std::fmt;
+use twitter_stream::rt::{self, Future, Stream};
 use wordsworth::syllable_counter;
 
 fn main() {
@@ -15,23 +13,14 @@ fn main() {
     let twitter_prefix = envy::prefixed("TWITTER_");
     let twitter_config: TwitterConfig = twitter_prefix.from_env().unwrap();
 
-    let token = TwitterToken::new(
+    let token = Token::new(
         twitter_config.api_key,
         twitter_config.api_secret,
         twitter_config.access_token,
         twitter_config.access_secret
     );
 
-    let stream_future = TwitterStreamBuilder::sample(token)
-        .listen()
-        .unwrap()
-        .flatten_stream()
-        .filter_map(|json| {
-            match serde_json::from_str::<Tweet>(&json) {
-                Ok(val) => Some(val),
-                Err(_) => None, // May have seen a status deletion { delete: { status } }
-            }
-        })
+    let stream_future = TweetStream::new(token)
         .filter(|tweet| {
 
             let mut tot_syllables = 0;
@@ -43,7 +32,7 @@ fn main() {
                 return false;
             }
 
-            for word in tweet.text.as_str().split_whitespace() {
+            for word in tweet.text.split_whitespace() {
                 tot_syllables += syllable_counter(&word);
                 if tot_syllables == 5 {
                     had_5 = true;
@@ -59,16 +48,12 @@ fn main() {
             had_5 && had_12 && had_17 && tot_syllables == 17
         })
         .for_each(|tweet| {
-            debug(&tweet);
+            println!("{:#?}", tweet);
             Ok(())
         })
         .map_err(|e| println!("error: {}", e));
 
-    twitter_stream::rt::run(stream_future);
-}
-
-fn debug(value: impl fmt::Debug) -> () {
-    println!("{:#?}", value);
+    rt::run(stream_future);
 }
 
 #[derive(Deserialize, Debug)]
@@ -77,11 +62,4 @@ struct TwitterConfig {
     api_secret: String,
     access_token: String,
     access_secret: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Tweet {
-    #[serde(rename = "id_str")]
-    id: String,
-    text: String
 }
