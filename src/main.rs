@@ -1,9 +1,9 @@
 mod twitter;
 use self::twitter::{Token, TweetStream};
+use futures::{Future, Stream};
 use dotenv::dotenv;
 use envy;
 use serde_derive::Deserialize;
-use twitter_stream::rt::{self, Future, Stream};
 use wordsworth::syllable_counter;
 
 fn main() {
@@ -53,7 +53,7 @@ fn main() {
         })
         .map_err(|e| println!("error: {}", e));
 
-    rt::run(stream_future);
+    twitter::run(stream_future);
 }
 
 #[derive(Deserialize, Debug)]
