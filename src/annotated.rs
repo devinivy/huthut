@@ -1,8 +1,8 @@
 pub fn to_parts(string: &str) -> Vec<Part> {
 
-    let mut char_indices = string.char_indices().peekable();
     let mut parts: Vec<Part> = Vec::new();
-    let mut boundry = 0;
+    let mut char_indices = string.char_indices().peekable();
+    let mut boundary = 0;
 
     while let Some((i, ch)) = char_indices.next() {
 
@@ -13,10 +13,10 @@ pub fn to_parts(string: &str) -> Vec<Part> {
             continue;
         }
 
-        let prev_boundry = boundry;
-        boundry = i + ch.len_utf8();
+        let prev_boundary = boundary;
+        boundary = i + ch.len_utf8();
 
-        let str_part = &string[prev_boundry..boundry];
+        let str_part = &string[prev_boundary..boundary];
 
         if ch_is_whitespace {
             parts.push(Part::Whitespace(str_part))
