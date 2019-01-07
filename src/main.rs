@@ -1,3 +1,4 @@
+mod annotated;
 mod twitter;
 use self::twitter::{Token, TweetStream};
 use futures::{Future, Stream};
