@@ -1,3 +1,12 @@
+pub fn annotate<T, U>(items: Vec<T>, make_annotation: fn(&T) -> U) -> Vec<(T, U)> {
+    items.into_iter()
+        .map(|item| {
+            let annotation = make_annotation(&item);
+            (item, annotation)
+        })
+        .collect()
+}
+
 pub fn to_parts(string: &str) -> Vec<Part> {
 
     let mut parts: Vec<Part> = Vec::new();
@@ -41,6 +50,23 @@ mod test {
         assert_eq!(to_parts("alpha  bet ic   "), [Word("alpha"), Whitespace("  "), Word("bet"), Whitespace(" "), Word("ic"), Whitespace("   ")]);
         assert_eq!(to_parts(" alpha  bet ic   "), [Whitespace(" "), Word("alpha"), Whitespace("  "), Word("bet"), Whitespace(" "), Word("ic"), Whitespace("   ")]);
     }
+
+    #[test]
+    fn annotate_length() {
+        assert_eq!(
+            annotate(
+                to_parts("alpha  bet ic"),
+                |part| part.get_string().len()
+            ),
+            [
+                (Word("alpha"), 5),
+                (Whitespace("  "), 2),
+                (Word("bet"), 3),
+                (Whitespace(" "), 1),
+                (Word("ic"), 2),
+            ]
+        );
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -49,9 +75,10 @@ pub enum Part<'a> {
     Whitespace(&'a str),
 }
 
-/*
-pub struct Annotation<'a, T> {
-    string: &'a str,
-    info: Option<T>,
+impl<'a> Part<'a> {
+    fn get_string(&self) -> &'a str {
+        match self {
+            Part::Word(s) | Part::Whitespace(s) => s
+        }
+    }
 }
-*/
