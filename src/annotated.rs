@@ -54,17 +54,8 @@ mod test {
     #[test]
     fn annotate_length() {
         assert_eq!(
-            annotate(
-                to_parts("alpha  bet ic"),
-                |part| part.get_string().len()
-            ),
-            [
-                (Word("alpha"), 5),
-                (Whitespace("  "), 2),
-                (Word("bet"), 3),
-                (Whitespace(" "), 1),
-                (Word("ic"), 2),
-            ]
+            annotate(to_parts("alpha  bet ic"), |part| part.get_string().len()),
+            [(Word("alpha"), 5), (Whitespace("  "), 2), (Word("bet"), 3), (Whitespace(" "), 1), (Word("ic"), 2)]
         );
     }
 }
@@ -76,7 +67,7 @@ pub enum Part<'a> {
 }
 
 impl<'a> Part<'a> {
-    fn get_string(&self) -> &'a str {
+    pub fn get_string(&self) -> &'a str {
         match self {
             Part::Word(s) | Part::Whitespace(s) => s
         }
