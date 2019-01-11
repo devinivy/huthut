@@ -1,3 +1,4 @@
+use super::annotated::{Part};
 use serde_json;
 use serde_derive::Deserialize;
 use futures::{future::FlattenStream, stream::FilterMap, Poll, Future, Stream};
@@ -37,4 +38,29 @@ impl Stream for TweetStream {
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         self.inner.poll()
     }
+}
+
+pub fn analyze_part<'a>(part: &Part<'a>) -> TweetPart<'a> {
+    match part {
+        Part::Whitespace(space) => TweetPart::Whitespace(space.matches("\n").count()),
+        Part::Word(word) => {
+            if word.starts_with("https:") {
+                return TweetPart::Link;
+            } else if word.starts_with("@") {
+                return TweetPart::Mention(&word[1..]);
+            } else if word.starts_with("#") {
+                return TweetPart::Hashtag(&word[1..]);
+            }
+            TweetPart::Word
+        },
+    }
+}
+
+#[derive(Debug)]
+pub enum TweetPart<'a> {
+    Word,
+    Link,
+    Mention(&'a str),
+    Hashtag(&'a str),
+    Whitespace(usize),
 }
