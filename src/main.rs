@@ -48,8 +48,17 @@ fn main() {
 
             had_5 && had_12 && had_17 && tot_syllables == 17
         })
-        .for_each(|tweet| {
-            println!("{:#?}", tweet);
+        .map(|tweet| {
+
+            let annotated_parts = annotated::annotate(
+                annotated::to_parts(&tweet.text),
+                |part| twitter::analyze_part(&part)
+            );
+
+            (tweet, annotated_parts)
+        })
+        .for_each(|x| {
+            println!("{:#?}", x);
             Ok(())
         })
         .map_err(|e| println!("error: {}", e));

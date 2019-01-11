@@ -28,13 +28,26 @@ pub fn to_parts(string: &str) -> Vec<Part> {
 
         if ch.is_whitespace() {
             parts.push(Part::Whitespace(str_part));
-        }
-        else {
+        } else {
             parts.push(Part::Word(str_part));
         }
     }
 
     parts
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Part<'a> {
+    Word(&'a str),
+    Whitespace(&'a str),
+}
+
+impl<'a> Part<'a> {
+    pub fn get_string(&self) -> &'a str {
+        match self {
+            Part::Word(s) | Part::Whitespace(s) => s
+        }
+    }
 }
 
 #[cfg(test)]
@@ -57,19 +70,5 @@ mod test {
             annotate(to_parts("alpha  bet ic"), |part| part.get_string().len()),
             [(Word("alpha"), 5), (Whitespace("  "), 2), (Word("bet"), 3), (Whitespace(" "), 1), (Word("ic"), 2)]
         );
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Part<'a> {
-    Word(&'a str),
-    Whitespace(&'a str),
-}
-
-impl<'a> Part<'a> {
-    pub fn get_string(&self) -> &'a str {
-        match self {
-            Part::Word(s) | Part::Whitespace(s) => s
-        }
     }
 }
