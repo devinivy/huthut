@@ -7,11 +7,13 @@ pub fn annotate<T, U>(items: Vec<T>, make_annotation: fn(&T) -> U) -> Vec<(T, U)
         .collect()
 }
 
-pub fn to_parts(string: &str) -> Vec<Part> {
 
-    // In a general purpose function, we'd want to handle empty input here,
-    // before the allocation(s) that I assume happen below, but this is
-    // processing tweets which are unlikely to be empty. --SK
+pub fn to_parts(string: &str) -> Vec<Part> {
+    // While it's unlikely the empty input fast path will be triggered here,
+    // knowing the input is non-empty simplifies some code below.
+    if s.len() < 1 {
+        return Vec::with_capacity(0); // does not allocate
+    }
 
     // Both these passes should probably use str::find because it may
     // be implemented in platform specific assembly or other cleverness,
@@ -21,37 +23,21 @@ pub fn to_parts(string: &str) -> Vec<Part> {
     // although I haven't tested in this case. However, I suspect the
     // best way here is some data analysis: we could write a script
     // to find maybe the 95th percentile count for tweets we care about
-    // and hard code that.
+    // and hard code that. --SK
 
     let mut n = 0;
-
-    // For each boundary, increment n. A boundary is a place where a
-    // character is in a different class from the one before. The
-    // (non-existent) character before the beginning of the string is
-    // in a class by itself.
-
-    #[derive(PartialEq, Eq)]
-    enum Class {
-        Before = 0,
-        Word,
-        White,
-    }
-    let mut prev_class = Class::Before;
-
-    let mut iterator = string.char_indices();
-    while let Some((_, c)) = iterator.next() {
-        let cur_class = if c.is_whitespace() {
-            Class::White
-        } else {
-            Class::Word
-        };
-        if cur_class != prev_class {
+    // prev is initialized so the first character will always trigger
+    // an increment because this doesn't process end of string.
+    // Seems like there ought to be a way to get the first UTF-8 character
+    // from a string without so many extraneous concepts. --SK
+    let mut prev = !string.chars().next().unwrap().is_whitespace();
+    for c in string.chars() {
+        if prev != c.is_whitespace() {
             n += 1;
+            prev = !prev;
         }
-        prev_class = cur_class;
     }
     // println!("{} {}", n, string);
-
 
     let mut parts: Vec<Part> = Vec::with_capacity(n);
     let mut char_indices = string.char_indices().peekable();
