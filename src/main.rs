@@ -36,6 +36,10 @@ fn main() {
         })
         .filter_map(|(tweet, part_tokens)| {
 
+            if tweet.lang != "en" {
+                return None;
+            }
+
             let mut tot_syllables = 0;
             let mut had_5 = false;
             let mut had_12 = false;
@@ -46,8 +50,8 @@ fn main() {
                 let word = &tweet.text[..][&part];
 
                 let maybe_normalized_word: Option<String> = match token {
-                    TweetToken::RT => Some("retweet".to_string()),
-                    TweetToken::Mention => Some("at ".to_owned() + &deunicode(&word[1..])),
+                    TweetToken::RT => None, // Some("retweet".to_string()),
+                    TweetToken::Mention => None, // Some("at ".to_owned() + &deunicode(&word[1..])),
                     TweetToken::Hashtag => Some("hashtag ".to_owned() + &deunicode(&word[1..])),
                     TweetToken::Word => Some(deunicode(word)),
                     TweetToken::Link => None,
@@ -97,7 +101,7 @@ fn main() {
             Some((tweet, tweet_text_w_syllables))
         })
         .for_each(|(tweet, tweet_text_w_syllables)| {
-            println!("{:#?}", (tweet.id, tweet_text_w_syllables));
+            println!("{:#?}", (tweet, tweet_text_w_syllables));
             Ok(())
         })
         .map_err(|e| println!("error: {}", e));

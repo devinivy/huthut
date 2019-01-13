@@ -12,7 +12,8 @@ type TwitterStreamError = <TwitterStream as Stream>::Error;
 pub struct Tweet {
     #[serde(rename = "id_str")]
     pub id: String,
-    pub text: String
+    pub text: String,
+    pub lang: String
 }
 
 pub struct TweetStream {
