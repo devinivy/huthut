@@ -5,6 +5,7 @@ authors = ["Devin Ivy <devin@bigroomstudios.com>"]
 edition = "2018"
 
 [dependencies]
+deunicode = "1.0.0"
 dotenv = "0.13.0"
 envy = "0.3.3"
 futures = "0.1.4"

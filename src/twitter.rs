@@ -40,29 +40,29 @@ impl Stream for TweetStream {
     }
 }
 
-pub fn analyze_part(part: &Part, full_text: &str) -> TweetPart {
+pub fn analyze_part(part: &Part, full_text: &str) -> TweetToken {
     match part {
-        Part::Whitespace(_) => TweetPart::Whitespace,
+        Part::Whitespace(_) => TweetToken::Whitespace,
         Part::Word(_) => {
             let word = &full_text[part];
 
             if word.starts_with("https://") || word.starts_with("http://") {
-                return TweetPart::Link;
+                return TweetToken::Link;
             } else if word.starts_with("@") {
-                return TweetPart::Mention;
+                return TweetToken::Mention;
             } else if word.starts_with("#") {
-                return TweetPart::Hashtag;
+                return TweetToken::Hashtag;
             } else if word.to_uppercase() == "RT" {
-                return TweetPart::RT;
+                return TweetToken::RT;
             }
 
-            TweetPart::Word
+            TweetToken::Word
         },
     }
 }
 
 #[derive(Debug)]
-pub enum TweetPart {
+pub enum TweetToken {
     RT,
     Word,
     Link,
