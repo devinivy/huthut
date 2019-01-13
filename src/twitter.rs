@@ -1,4 +1,4 @@
-use super::annotated::{Part};
+// use super::annotated::{Part};
 use serde_json;
 use serde_derive::Deserialize;
 use futures::{future::FlattenStream, stream::FilterMap, Poll, Future, Stream};
@@ -40,6 +40,7 @@ impl Stream for TweetStream {
     }
 }
 
+/*
 pub fn analyze_part<'a>(part: &Part<'a>) -> TweetPart<'a> {
     match part {
         Part::Whitespace(space) => TweetPart::Whitespace(space.matches("\n").count()),
@@ -64,3 +65,4 @@ pub enum TweetPart<'a> {
     Hashtag(&'a str),
     Whitespace(usize),
 }
+*/

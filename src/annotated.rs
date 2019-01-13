@@ -1,4 +1,7 @@
-pub fn annotate<T, U>(items: Vec<T>, make_annotation: fn(&T) -> U) -> Vec<(T, U)> {
+use std::ops::{Range, Index};
+use std::slice::SliceIndex;
+
+pub fn annotate<T, U>(items: Vec<T>, make_annotation: impl Fn(&T) -> U) -> Vec<(T, U)> {
     items.into_iter()
         .map(|item| {
             let annotation = make_annotation(&item);
@@ -24,12 +27,10 @@ pub fn to_parts(string: &str) -> Vec<Part> {
         let prev_boundary = boundary;
         boundary = index + ch.len_utf8();
 
-        let str_part = &string[prev_boundary..boundary];
-
         if ch.is_whitespace() {
-            parts.push(Part::Whitespace(str_part));
+            parts.push(Part::Whitespace(prev_boundary..boundary));
         } else {
-            parts.push(Part::Word(str_part));
+            parts.push(Part::Word(prev_boundary..boundary));
         }
     }
 
@@ -37,15 +38,17 @@ pub fn to_parts(string: &str) -> Vec<Part> {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Part<'a> {
-    Word(&'a str),
-    Whitespace(&'a str),
+pub enum Part {
+    Word(Range<usize>),
+    Whitespace(Range<usize>),
 }
 
-impl<'a> Part<'a> {
-    pub fn get_string(&self) -> &'a str {
-        match self {
-            Part::Word(s) | Part::Whitespace(s) => s
+impl Index<&Part> for str {
+    type Output = str;
+
+    fn index(&self, part: &Part) -> &str {
+        match part {
+            Part::Word(range) | Part::Whitespace(range) => range.clone().index(self)
         }
     }
 }
@@ -57,18 +60,19 @@ mod test {
     #[test]
     fn to_parts_ascii() {
         assert_eq!(to_parts(""), []);
-        assert_eq!(to_parts("  "), [Whitespace("  ")]);
-        assert_eq!(to_parts("one-word"), [Word("one-word")]);
-        assert_eq!(to_parts("alpha  bet ic"), [Word("alpha"), Whitespace("  "), Word("bet"), Whitespace(" "), Word("ic")]);
-        assert_eq!(to_parts("alpha  bet ic   "), [Word("alpha"), Whitespace("  "), Word("bet"), Whitespace(" "), Word("ic"), Whitespace("   ")]);
-        assert_eq!(to_parts(" alpha  bet ic   "), [Whitespace(" "), Word("alpha"), Whitespace("  "), Word("bet"), Whitespace(" "), Word("ic"), Whitespace("   ")]);
+        assert_eq!(to_parts("  "), [Whitespace(0..2)]);
+        assert_eq!(to_parts("one-word"), [Word(0..8)]);
+        assert_eq!(to_parts("alpha  bet ic"), [Word(0..5), Whitespace(5..7), Word(7..10), Whitespace(10..11), Word(11..13)]);
+        assert_eq!(to_parts("alpha  bet ic   "), [Word(0..5), Whitespace(5..7), Word(7..10), Whitespace(10..11), Word(11..13), Whitespace(13..16)]);
+        assert_eq!(to_parts(" alpha  bet ic   "), [Whitespace(0..1), Word(1..6), Whitespace(6..8), Word(8..11), Whitespace(11..12), Word(12..14), Whitespace(14..17)]);
     }
 
     #[test]
     fn annotate_length() {
+        let string = "alpha  bet ic";
         assert_eq!(
-            annotate(to_parts("alpha  bet ic"), |part| part.get_string().len()),
-            [(Word("alpha"), 5), (Whitespace("  "), 2), (Word("bet"), 3), (Whitespace(" "), 1), (Word("ic"), 2)]
+            annotate(to_parts(string), |part| string[part].len()),
+            [(Word(0..5), 5), (Whitespace(5..7), 2), (Word(7..10), 3), (Whitespace(10..11), 1), (Word(11..13), 2)]
         );
     }
 }

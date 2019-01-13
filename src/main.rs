@@ -1,3 +1,5 @@
+#![feature(slice_index_methods)]
+
 mod annotated;
 mod twitter;
 use self::twitter::{Token, TweetStream};
@@ -52,7 +54,7 @@ fn main() {
 
             let annotated_parts = annotated::annotate(
                 annotated::to_parts(&tweet.text),
-                |part| twitter::analyze_part(&part)
+                |part| tweet.text[..][part].to_owned() //twitter::analyze_part(&part)
             );
 
             (tweet, annotated_parts)
