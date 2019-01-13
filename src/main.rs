@@ -24,7 +24,7 @@ fn main() {
     );
 
     let stream_future = TweetStream::new(token)
-        .filter(|tweet| {
+        /*.filter(|tweet| {
 
             let mut tot_syllables = 0;
             let mut had_5 = false;
@@ -49,12 +49,12 @@ fn main() {
             }
 
             had_5 && had_12 && had_17 && tot_syllables == 17
-        })
+        })*/
         .map(|tweet| {
 
             let annotated_parts = annotated::annotate(
                 annotated::to_parts(&tweet.text),
-                |part| tweet.text[..][part].to_owned() //twitter::analyze_part(&part)
+                |part| twitter::analyze_part(&part, &tweet.text)
             );
 
             (tweet, annotated_parts)
