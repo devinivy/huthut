@@ -12,7 +12,51 @@ pub fn annotate<T, U>(items: Vec<T>, make_annotation: impl Fn(&T) -> U) -> Vec<(
 
 pub fn to_parts(string: &str) -> Vec<Part> {
 
-    let mut parts: Vec<Part> = Vec::new();
+    // In a general purpose function, we'd want to handle empty input here,
+    // before the allocation(s) that I assume happen below, but this is
+    // processing tweets which are unlikely to be empty. --SK
+
+    // Both these passes should probably use str::find because it may
+    // be implemented in platform specific assembly or other cleverness,
+    // but the implementation is more complex, so maybe later. --SK
+
+    // Preallocate. Even when a prepass is required, it's usually worth,
+    // although I haven't tested in this case. However, I suspect the
+    // best way here is some data analysis: we could write a script
+    // to find maybe the 95th percentile count for tweets we care about
+    // and hard code that.
+
+    let mut n = 0;
+
+    // For each boundary, increment n. A boundary is a place where a
+    // character is in a different class from the one before. The
+    // (non-existent) character before the beginning of the string is
+    // in a class by itself.
+
+    #[derive(PartialEq, Eq)]
+    enum Class {
+        Before = 0,
+        Word,
+        White,
+    }
+    let mut prev_class = Class::Before;
+
+    let mut iterator = string.char_indices();
+    while let Some((_, c)) = iterator.next() {
+        let cur_class = if c.is_whitespace() {
+            Class::White
+        } else {
+            Class::Word
+        };
+        if cur_class != prev_class {
+            n += 1;
+        }
+        prev_class = cur_class;
+    }
+    // println!("{} {}", n, string);
+
+
+    let mut parts: Vec<Part> = Vec::with_capacity(n);
     let mut char_indices = string.char_indices().peekable();
     let mut boundary = 0;
 
