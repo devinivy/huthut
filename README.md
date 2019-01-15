@@ -1,4 +1,5 @@
-# HutHut
+# huthut
+Find accidental haikus
 
 ## Running it
 
