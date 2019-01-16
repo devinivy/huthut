@@ -1,47 +1,71 @@
-use std::iter::{Iterator, Peekable};
-use std::str::CharIndices;
+use std::iter::{Iterator};
 
 pub struct PartIterator<'a> {
-    string: &'a str,
-    char_indices: Peekable<CharIndices<'a>>,
-    boundary: usize,
+    s: &'a str,
+    start: usize,
+    white: bool,
 }
 
 impl<'a> PartIterator<'a> {
-    pub fn new(string: &'a str) -> PartIterator<'a> {
+    pub fn new(s: &'a str) -> PartIterator<'a> {
         PartIterator {
-            string,
-            char_indices: string.char_indices().peekable(),
-            boundary: 0,
+            s,
+            start: 0,
+            // Seems like there ought to be a way to get the first UTF-8
+            // character from a string without so many extraneous concepts.
+            // --SK
+            white: match s.chars().next() {
+                Some(c) => c.is_whitespace(),
+                None => false, // ignored
+            },
         }
     }
+}
+
+fn is_not_whitespace(c: char) -> bool {
+    return !c.is_whitespace();
 }
 
 impl<'a> Iterator for PartIterator<'a> {
     type Item = Part<'a>;
 
     fn next(&mut self) -> Option<Part<'a>> {
-        while let Some((index, ch)) = self.char_indices.next() {
-
-            if let Some((_, next_ch)) = self.char_indices.peek() {
-                if next_ch.is_whitespace() == ch.is_whitespace() {
-                    continue;
-                }
-            }
-
-            let prev_boundary = self.boundary;
-            self.boundary = index + ch.len_utf8();
-
-            let word = &self.string[prev_boundary..self.boundary];
-
-            if ch.is_whitespace() {
-                return Some(Part::Whitespace(word));
-            } else {
-                return Some(Part::Word(word));
-            }
+        if self.start >= self.s.len() {
+            return None
         }
-        None
+
+        let pattern = if self.white {
+            is_not_whitespace
+        } else {
+            char::is_whitespace
+        };
+
+        // This could use unwrap_or, but I suspect that would evaluate the
+        // argument, self.s.len(), even if it's not needed.
+        let end = match self.s[self.start..].find(pattern) {
+            Some(i) => self.start + i,
+            None => self.s.len(),
+        };
+
+        let substr = &self.s[self.start..end];
+
+        let part = Some(if self.white {
+            Part::Whitespace(substr)
+        } else {
+            Part::Word(substr)
+        });
+
+        self.start = end;
+        self.white = !self.white;
+
+        return part
     }
+
+    // Should be able to get prealloc by implementing size_hint
+    // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.size_hint
+
+    // And hopefully the empty input case is handled with no allocations
+    // by higher levels.
 }
 
 #[derive(Debug, PartialEq)]
