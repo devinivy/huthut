@@ -1,6 +1,5 @@
-#![feature(slice_index_methods)]
-
 mod annotated;
+mod syllables;
 mod twitter;
 use self::twitter::{Token, TweetStream, TweetToken};
 use self::annotated::{Part, PartIterator};
@@ -8,7 +7,6 @@ use futures::{Future, Stream};
 use dotenv::dotenv;
 use envy;
 use serde_derive::Deserialize;
-use wordsworth::syllable_counter;
 use deunicode::deunicode;
 
 fn main() {
@@ -36,7 +34,7 @@ fn main() {
                 had_5: bool,
                 had_12: bool,
                 had_17: bool,
-                tot_syllables: u32,
+                tot_syllables: usize,
                 text_w_syllables: String,
             }
 
@@ -89,9 +87,9 @@ fn main() {
                             },
                         };
 
-                        let maybe_syllables: Option<u32> = maybe_normalized_word
+                        let maybe_syllables: Option<usize> = maybe_normalized_word
                             .map(|normalized_word| normalized_word.replace(|c: char| c.is_ascii_punctuation(), ""))
-                            .map(|normalized_word| normalized_word.split_whitespace().map(syllable_counter).sum());
+                            .map(|normalized_word| normalized_word.split_whitespace().map(syllables::count).sum());
 
                         let text_part_w_syllables = match maybe_syllables {
                             Some(syllables) => format!("{} ({})", word, syllables),
