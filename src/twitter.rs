@@ -41,12 +41,10 @@ impl Stream for TweetStream {
     }
 }
 
-pub fn analyze_part(part: &Part, full_text: &str) -> TweetToken {
+pub fn analyze_part(part: &Part) -> TweetToken {
     match part {
         Part::Whitespace(_) => TweetToken::Whitespace,
-        Part::Word(_) => {
-            let word = &full_text[part];
-
+        Part::Word(word) => {
             if word.starts_with("https://") || word.starts_with("http://") {
                 return TweetToken::Link;
             } else if word.starts_with("@") {
@@ -56,7 +54,6 @@ pub fn analyze_part(part: &Part, full_text: &str) -> TweetToken {
             } else if word.to_uppercase() == "RT" {
                 return TweetToken::RT;
             }
-
             TweetToken::Word
         },
     }
